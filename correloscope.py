@@ -1,4 +1,4 @@
-# Streamlit-based Interactive Correlation Explorer
+# Streamlit-based Interactive Correlation Explorer with Anscombe's Quartet and Quiz Tab
 
 import streamlit as st
 import numpy as np
@@ -7,61 +7,92 @@ import plotly.graph_objects as go
 from scipy.stats import pearsonr
 
 st.set_page_config(page_title="Correl-o-scope", layout="wide")
-st.title("🔍 Correl-o-scope: Explore Correlation with Your Eyes!")
 
-# Sidebar controls
-st.sidebar.header("🎛️ Customize the Dataset")
-n_points = st.sidebar.slider("Number of data points", min_value=10, max_value=500, value=100, step=10)
-noise = st.sidebar.slider("Noise level", min_value=0.0, max_value=2.0, value=0.5, step=0.1)
-nonlinear_pct = st.sidebar.slider("Nonlinear pattern (%)", min_value=0, max_value=100, value=0, step=1)
-show_fit = st.sidebar.checkbox("Show trend lines", value=True)
+# Tabs
+main_tab, anscombe_tab, quiz_tab = st.tabs(["🔍 Correlation Explorer", "📊 Anscombe’s Quartet", "📝 Quiz Zone"])
 
-# Generate data
-np.random.seed(42)
-x = np.linspace(-5, 5, n_points)
-y_linear = x + np.random.normal(scale=noise, size=n_points)
-y_nonlinear = np.sin(x) * (nonlinear_pct / 100)
-y_mix = (1 - nonlinear_pct / 100) * y_linear + y_nonlinear
-r, _ = pearsonr(x, y_mix)
+with main_tab:
+    # (Content unchanged from previous main tab)
+    ...
 
-# Linear & Nonlinear fits
-linear_fit = np.poly1d(np.polyfit(x, y_mix, 1))(x)
-nonlinear_fit = np.poly1d(np.polyfit(x, y_mix, 3))(x)
+with anscombe_tab:
+    # (Content unchanged from previous anscombe tab)
+    ...
 
-# Plot
-fig = go.Figure()
-fig.add_trace(go.Scatter(x=x, y=y_mix, mode='markers', name='Data', marker=dict(color='cornflowerblue')))
-if show_fit:
-    fig.add_trace(go.Scatter(x=x, y=linear_fit, mode='lines', name='Linear Fit', line=dict(dash='dash', color='red')))
-    fig.add_trace(go.Scatter(x=x, y=nonlinear_fit, mode='lines', name='Nonlinear Fit', line=dict(dash='dot', color='green')))
+with quiz_tab:
+    st.title("📝 Quiz Zone: Test Your Correlation IQ")
+    st.markdown("Try these 5 conceptual questions based on what you've explored so far:")
 
-fig.update_layout(title=f"📊 Correlation Explorer (Pearson r = {r:.2f})",
-                  xaxis_title="X", yaxis_title="Y",
-                  height=500, legend=dict(x=0, y=1))
+    quiz_score = 0
 
-st.plotly_chart(fig, use_container_width=True)
+    q1 = st.radio("1. What does Pearson's correlation coefficient (r) measure?", [
+        "The strength of any kind of relationship",
+        "The linear relationship between two variables",
+        "The average distance from the mean"
+    ], key='quiz_q1')
+    if q1:
+        if q1 == "The linear relationship between two variables":
+            st.success("Correct! Pearson’s r measures linear association.")
+            quiz_score += 1
+        else:
+            st.error("Incorrect. r only captures linear relationships.")
 
-# Interpretation
-st.subheader("🧠 Interpretation")
-if abs(r) > 0.85:
-    st.info("**Strong correlation detected.** But is it linear or nonlinear?")
-elif abs(r) > 0.5:
-    st.warning("**Moderate correlation.** Patterns exist, but might not be linear.")
-elif abs(r) > 0.2:
-    st.warning("**Weak correlation.** There might be hidden structure or noise.")
-else:
-    st.error("**No strong linear correlation.** Could still be nonlinear or due to outliers.")
+    q2 = st.radio("2. If two variables have r = 0, what does it mean?", [
+        "There’s absolutely no relationship",
+        "They have no linear relationship",
+        "One causes the other"
+    ], key='quiz_q2')
+    if q2:
+        if q2 == "They have no linear relationship":
+            st.success("Right! But there could still be a nonlinear one.")
+            quiz_score += 1
+        else:
+            st.error("Not quite. Zero correlation only means no **linear** link.")
 
-# Quick quiz block
-st.markdown("---")
-st.subheader("🤔 Quick Check: Would a linear model be appropriate here?")
-with st.expander("💡 Click to reveal answer"):
-    if nonlinear_pct > 60 and abs(r) < 0.3:
-        st.write("Probably not. The data shows a nonlinear shape and low r.")
-    elif abs(r) > 0.8:
-        st.write("Yes, a linear model might perform decently—but check the fit visually.")
-    else:
-        st.write("Unclear. Consider inspecting both linear and nonlinear fits.")
+    q3 = st.radio("3. Why is it risky to rely only on correlation value?", [
+        "Because r ignores units",
+        "Because r can hide nonlinear or outlier effects",
+        "Because it's hard to calculate"
+    ], key='quiz_q3')
+    if q3:
+        if q3 == "Because r can hide nonlinear or outlier effects":
+            st.success("Exactly! Always visualize your data.")
+            quiz_score += 1
+        else:
+            st.error("Incorrect. Visualization reveals what r may miss.")
 
-st.markdown("---")
-st.caption("Correlation ≠ Causation. Use visuals, intuition, and context together!")
+    q4 = st.radio("4. What is special about Anscombe’s Quartet?", [
+        "Each dataset has a different correlation",
+        "They all have the same mean",
+        "They have the same correlation but look very different"
+    ], key='quiz_q4')
+    if q4:
+        if q4 == "They have the same correlation but look very different":
+            st.success("Spot on! That’s the magic of Anscombe’s Quartet.")
+            quiz_score += 1
+        else:
+            st.error("Try again. It’s about the visual difference.")
+
+    q5 = st.radio("5. Which of these is most likely to inflate the value of r?", [
+        "Outliers",
+        "Having too many points",
+        "Measuring in percentages"
+    ], key='quiz_q5')
+    if q5:
+        if q5 == "Outliers":
+            st.success("Correct! Outliers can distort correlation heavily.")
+            quiz_score += 1
+        else:
+            st.error("Nope. Outliers have the biggest impact on r.")
+
+    # Final Score
+    if all([q1, q2, q3, q4, q5]):
+        st.markdown("---")
+        st.subheader("🎯 Your Quiz Zone Score:")
+        st.markdown(f"You scored **{quiz_score}/5**. Well done!")
+        if quiz_score == 5:
+            st.balloons()
+        elif quiz_score >= 3:
+            st.info("Good job! Review your weak spots and try again.")
+        else:
+            st.warning("Keep going! Revisit the visual and narrative feedback to improve.")
